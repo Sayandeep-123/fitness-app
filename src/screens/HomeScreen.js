@@ -310,12 +310,21 @@ export default function HomeScreen({ navigation }) {
         slot: meal.slot,
         calories: meal.calories ?? 0,
         proteinG: meal.protein_g ?? 0,
+        status: "done",
       });
-      if (result?.daily_state) {
-        setPlan((prev) =>
-          prev ? { ...prev, daily_state: { ...prev.daily_state, ...result.daily_state } } : prev
-        );
-      }
+      setPlan((prev) => {
+        if (!prev) return prev;
+        return {
+          ...prev,
+          daily_state: result?.daily_state ? { ...prev.daily_state, ...result.daily_state } : prev.daily_state,
+          current_plan: {
+            ...prev.current_plan,
+            meals: (prev.current_plan.meals ?? []).map((m) =>
+              m.slot?.toLowerCase() === meal.slot?.toLowerCase() ? { ...m, status: "done" } : m
+            ),
+          },
+        };
+      });
     } catch {
       // Silently ignore — card is already showing "Logged" badge
     }
@@ -323,19 +332,54 @@ export default function HomeScreen({ navigation }) {
 
   const handleMealSkipDone = useCallback(async (meal) => {
     try {
-      await logMealDone({ mealName: meal.name, slot: meal.slot, calories: 0, proteinG: 0 });
+      const result = await logMealDone({
+        mealName: meal.name,
+        slot: meal.slot,
+        calories: 0,
+        proteinG: 0,
+        status: "skipped",
+      });
+      setPlan((prev) => {
+        if (!prev) return prev;
+        return {
+          ...prev,
+          daily_state: result?.daily_state ? { ...prev.daily_state, ...result.daily_state } : prev.daily_state,
+          current_plan: {
+            ...prev.current_plan,
+            meals: (prev.current_plan.meals ?? []).map((m) =>
+              m.slot?.toLowerCase() === meal.slot?.toLowerCase() ? { ...m, status: "skipped" } : m
+            ),
+          },
+        };
+      });
     } catch {
       // Silently ignore
     }
   }, []);
 
   const handleAskAlex = useCallback((prefilledMessage) => {
-    navigation.navigate("Log", { prefilledMessage });
+    navigation.navigate("LogEvent", { prefilledMessage });
   }, [navigation]);
 
   const handleExerciseDone = useCallback(async (exercise) => {
     try {
-      await logExerciseDone({ exerciseName: exercise.name, status: "done" });
+      const result = await logExerciseDone({ exerciseName: exercise.name, status: "done" });
+      setPlan((prev) => {
+        if (!prev) return prev;
+        return {
+          ...prev,
+          daily_state: result?.daily_state ? { ...prev.daily_state, ...result.daily_state } : prev.daily_state,
+          current_plan: {
+            ...prev.current_plan,
+            workout: prev.current_plan.workout ? {
+              ...prev.current_plan.workout,
+              exercises: (prev.current_plan.workout.exercises ?? []).map((e) =>
+                e.name?.toLowerCase() === exercise.name?.toLowerCase() ? { ...e, status: "done" } : e
+              ),
+            } : prev.current_plan.workout,
+          },
+        };
+      });
     } catch {
       // Silently ignore — card already shows "Done" badge
     }
@@ -344,11 +388,22 @@ export default function HomeScreen({ navigation }) {
   const handleExerciseSkipDone = useCallback(async (exercise) => {
     try {
       const result = await logExerciseDone({ exerciseName: exercise.name, status: "skipped" });
-      if (result?.daily_state) {
-        setPlan((prev) =>
-          prev ? { ...prev, daily_state: { ...prev.daily_state, ...result.daily_state } } : prev
-        );
-      }
+      setPlan((prev) => {
+        if (!prev) return prev;
+        return {
+          ...prev,
+          daily_state: result?.daily_state ? { ...prev.daily_state, ...result.daily_state } : prev.daily_state,
+          current_plan: {
+            ...prev.current_plan,
+            workout: prev.current_plan.workout ? {
+              ...prev.current_plan.workout,
+              exercises: (prev.current_plan.workout.exercises ?? []).map((e) =>
+                e.name?.toLowerCase() === exercise.name?.toLowerCase() ? { ...e, status: "skipped" } : e
+              ),
+            } : prev.current_plan.workout,
+          },
+        };
+      });
     } catch {
       // Silently ignore
     }
@@ -608,7 +663,7 @@ export default function HomeScreen({ navigation }) {
     <ScreenGradient>
     <ScrollView
       style={{ backgroundColor: "transparent" }}
-      contentContainerStyle={{ paddingHorizontal: 24, paddingTop: 64, paddingBottom: 32 }}
+      contentContainerStyle={{ paddingHorizontal: 24, paddingTop: 64, paddingBottom: 110 }}
       refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} />}
       showsVerticalScrollIndicator={false}
     >

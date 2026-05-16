@@ -20,7 +20,10 @@ const SWIPE_THRESHOLD = 80;
 
 export default function MealCard({ meal, onLogDone, onSkipDone, onAskAlex }) {
   const [expanded, setExpanded] = useState(false);
-  const [status, setStatus] = useState(null); // null | 'logged' | 'skipped'
+  // Restore status from server (meal.status: "done" | "skipped" | null)
+  const [status, setStatus] = useState(
+    meal.status === "done" ? "logged" : meal.status === "skipped" ? "skipped" : null
+  );
   const translateX = useRef(new Animated.Value(0)).current;
   const thresholdTriggered = useRef(false);
 

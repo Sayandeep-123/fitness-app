@@ -12,7 +12,8 @@ import * as Haptics from "expo-haptics";
 const SWIPE_THRESHOLD = 80;
 
 export default function ExerciseCard({ exercise, isLast, onDone, onSkipDone, onAskAlex }) {
-  const [status, setStatus] = useState(null); // null | 'done' | 'skipped'
+  // Restore status from server (exercise.status: "done" | "skipped" | null)
+  const [status, setStatus] = useState(exercise.status ?? null);
   const translateX = useRef(new Animated.Value(0)).current;
   const thresholdTriggered = useRef(false);
 
