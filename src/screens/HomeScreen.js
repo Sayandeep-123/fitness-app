@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useFocusEffect } from "@react-navigation/native";
 import {
   ActivityIndicator,
@@ -28,6 +28,34 @@ import {
   logExerciseDone,
 } from "../api/plan";
 import { useAuth } from "../context/AuthContext";
+
+// ─── Time-aware greeting helpers ─────────────────────────────────────────────
+
+function getTimeOfDay() {
+  const hour = new Date().getHours();
+  if (hour >= 5 && hour < 11) return "morning";
+  if (hour >= 11 && hour < 14) return "noon";
+  if (hour >= 14 && hour < 18) return "afternoon";
+  return "night";
+}
+
+function getGreetingLabel(timeOfDay) {
+  switch (timeOfDay) {
+    case "morning":   return "Good morning";
+    case "noon":      return "Good afternoon";
+    case "afternoon": return "Good afternoon";
+    case "night":     return "Good evening";
+    default:          return "Hello";
+  }
+}
+
+// Gradient colors keyed by time of day
+const TIME_GRADIENTS = {
+  morning:   ["#fefce8", "#f9fafb", "#ffffff"],
+  noon:      ["#f0fdf4", "#f9fafb", "#ffffff"],
+  afternoon: ["#fff7ed", "#f9fafb", "#ffffff"],
+  night:     ["#eef2ff", "#f5f3ff", "#ffffff"],
+};
 
 // ─── Macro summary card ───────────────────────────────────────────────────────
 
@@ -302,6 +330,11 @@ export default function HomeScreen({ navigation }) {
   const [selectedDayLoading, setSelectedDayLoading] = useState(false);
   const pollRef = useRef(null);
   const weeklyPollRef = useRef(null);
+
+  // Computed once per mount — changes only matter on day boundary, refresh handles it
+  const timeOfDay = useMemo(() => getTimeOfDay(), []);
+  const greetingLabel = useMemo(() => getGreetingLabel(timeOfDay), [timeOfDay]);
+  const gradientColors = useMemo(() => TIME_GRADIENTS[timeOfDay], [timeOfDay]);
 
   const handleMealLogDone = useCallback(async (meal) => {
     try {
@@ -660,7 +693,7 @@ export default function HomeScreen({ navigation }) {
   })();
 
   return (
-    <ScreenGradient>
+    <ScreenGradient colors={gradientColors}>
     <ScrollView
       style={{ backgroundColor: "transparent" }}
       contentContainerStyle={{ paddingHorizontal: 24, paddingTop: 64, paddingBottom: 110 }}
@@ -668,11 +701,11 @@ export default function HomeScreen({ navigation }) {
       showsVerticalScrollIndicator={false}
     >
       {/* Header */}
-      <View className="mb-6">
-        <Text className="text-2xl font-bold text-gray-900">
-          Hey, {user?.name?.split(" ")[0] ?? "there"} 👋
+      <View style={headerStyles.container}>
+        <Text style={headerStyles.greeting}>{greetingLabel},</Text>
+        <Text style={headerStyles.name}>
+          {user?.name?.split(" ")[0] ?? "there"}
         </Text>
-        <Text className="text-sm text-gray-500 mt-0.5">Here's your plan for today</Text>
       </View>
 
       {error && (
@@ -794,3 +827,31 @@ export default function HomeScreen({ navigation }) {
     </ScreenGradient>
   );
 }
+
+// ─── Header styles ────────────────────────────────────────────────────────────
+
+const headerStyles = StyleSheet.create({
+  container: {
+    marginBottom: 24,
+  },
+  greeting: {
+    fontSize: 14,
+    fontWeight: "500",
+    color: "#6b7280",
+    letterSpacing: 0.1,
+    marginBottom: 2,
+  },
+  name: {
+    fontSize: 28,
+    fontWeight: "700",
+    color: "#111827",
+    letterSpacing: -0.5,
+    lineHeight: 34,
+  },
+  subtitle: {
+    fontSize: 13,
+    color: "#9ca3af",
+    marginTop: 4,
+    fontWeight: "400",
+  },
+});

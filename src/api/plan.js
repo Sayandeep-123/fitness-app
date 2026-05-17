@@ -13,11 +13,15 @@ export const getPlanStatus = () => apiRequest("/generate-plan/status");
 export const getCurrentPlan = () =>
   apiRequest("/current-plan", { headers: { "X-User-Date": getUserDate() } });
 
-export const logEvent = (input) =>
+export const logEvent = (inputText, isFollowup = false, followupTarget = null) =>
   apiRequest("/log-event", {
     method: "POST",
     headers: { "X-User-Date": getUserDate() },
-    body: JSON.stringify({ input }),
+    body: JSON.stringify({
+      inputText,
+      is_followup: isFollowup,
+      ...(followupTarget ? { followup_target: followupTarget } : {}),
+    }),
   });
 
 export const getChatHistory = () => apiRequest("/chat-history");

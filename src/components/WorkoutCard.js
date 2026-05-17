@@ -1,61 +1,75 @@
-import { Text, View } from "react-native";
+import { StyleSheet, Text, View } from "react-native";
 import ExerciseCard from "./ExerciseCard";
 
-const INTENSITY_COLORS = {
-  low: { bg: "bg-green-100", text: "text-green-700" },
-  moderate: { bg: "bg-amber-100", text: "text-amber-700" },
-  high: { bg: "bg-red-100", text: "text-red-700" },
+// Intensity color tokens — using blue/indigo family for workouts
+const INTENSITY_CONFIG = {
+  low:      { bg: "#f0fdf4", text: "#16a34a", dot: "#22c55e" },
+  moderate: { bg: "#fef9c3", text: "#ca8a04", dot: "#eab308" },
+  high:     { bg: "#fee2e2", text: "#dc2626", dot: "#ef4444" },
 };
 
 export default function WorkoutCard({ workout, onExerciseDone, onExerciseSkipDone, onAskAlex }) {
   if (!workout) return null;
 
-  const ic = INTENSITY_COLORS[workout.intensity] ?? { bg: "bg-gray-100", text: "text-gray-600" };
+  const ic = INTENSITY_CONFIG[workout.intensity] ?? { bg: "#f3f4f6", text: "#6b7280", dot: "#9ca3af" };
   const exerciseCount = workout.exercises?.length ?? 0;
 
   return (
-    <View className="bg-white border border-gray-100 rounded-2xl p-4 shadow-sm">
-      {/* Header */}
-      <View className="flex-row justify-between items-center mb-4">
-        <Text className="font-semibold text-gray-900 capitalize">
-          {workout.workout_type} Workout
-        </Text>
-        <View className="flex-row items-center gap-2">
-          <View className={`rounded-full px-2.5 py-0.5 ${ic.bg}`}>
-            <Text className={`text-xs font-medium capitalize ${ic.text}`}>
-              {workout.intensity}
+    <View style={workoutStyles.card}>
+      {/* ── Card header ───────────────────────────────────── */}
+      <View style={workoutStyles.headerRow}>
+        {/* Left: icon badge + title */}
+        <View style={workoutStyles.headerLeft}>
+          <View style={workoutStyles.iconBadge}>
+            <Text style={workoutStyles.iconBadgeText}>◈</Text>
+          </View>
+          <View>
+            <Text style={workoutStyles.workoutTitle}>
+              {workout.workout_type
+                ? `${workout.workout_type.charAt(0).toUpperCase()}${workout.workout_type.slice(1)} Workout`
+                : "Workout"}
+            </Text>
+            <Text style={workoutStyles.workoutMeta}>
+              {exerciseCount} exercises · {workout.estimated_duration_minutes} min
             </Text>
           </View>
-          <Text className="text-sm text-gray-400">{workout.estimated_duration_minutes} min</Text>
+        </View>
+
+        {/* Right: intensity chip */}
+        <View style={[workoutStyles.intensityChip, { backgroundColor: ic.bg }]}>
+          <View style={[workoutStyles.intensityDot, { backgroundColor: ic.dot }]} />
+          <Text style={[workoutStyles.intensityText, { color: ic.text }]}>
+            {workout.intensity}
+          </Text>
         </View>
       </View>
 
-      {/* Stats strip */}
-      <View className="flex-row bg-gray-50 rounded-xl p-3 mb-4 justify-around">
-        <View className="items-center">
-          <Text className="text-sm font-semibold text-gray-900">{workout.warm_up_minutes}m</Text>
-          <Text className="text-xs text-gray-400 mt-0.5">Warm-up</Text>
+      {/* ── Stats strip ────────────────────────────────────── */}
+      <View style={workoutStyles.statsStrip}>
+        <View style={workoutStyles.statCell}>
+          <Text style={workoutStyles.statValue}>{workout.warm_up_minutes}m</Text>
+          <Text style={workoutStyles.statLabel}>Warm-up</Text>
         </View>
-        <View className="w-px bg-gray-200" />
-        <View className="items-center">
-          <Text className="text-sm font-semibold text-gray-900">{exerciseCount}</Text>
-          <Text className="text-xs text-gray-400 mt-0.5">Exercises</Text>
+        <View style={workoutStyles.statDivider} />
+        <View style={workoutStyles.statCell}>
+          <Text style={workoutStyles.statValue}>{exerciseCount}</Text>
+          <Text style={workoutStyles.statLabel}>Exercises</Text>
         </View>
-        <View className="w-px bg-gray-200" />
-        <View className="items-center">
-          <Text className="text-sm font-semibold text-gray-900">{workout.cool_down_minutes}m</Text>
-          <Text className="text-xs text-gray-400 mt-0.5">Cool-down</Text>
+        <View style={workoutStyles.statDivider} />
+        <View style={workoutStyles.statCell}>
+          <Text style={workoutStyles.statValue}>{workout.cool_down_minutes}m</Text>
+          <Text style={workoutStyles.statLabel}>Cool-down</Text>
         </View>
       </View>
 
-      {/* Swipe hint — only shown when exercises exist and none have been actioned */}
+      {/* ── Swipe hint ──────────────────────────────────────── */}
       {exerciseCount > 0 && (
-        <Text style={{ fontSize: 11, color: "#9ca3af", marginBottom: 8, textAlign: "center" }}>
+        <Text style={workoutStyles.swipeHint}>
           Swipe right to mark done · swipe left to skip
         </Text>
       )}
 
-      {/* Per-exercise swipable cards */}
+      {/* ── Exercise cards ──────────────────────────────────── */}
       {workout.exercises?.map((ex, i) => (
         <ExerciseCard
           key={i}
@@ -67,12 +81,145 @@ export default function WorkoutCard({ workout, onExerciseDone, onExerciseSkipDon
         />
       ))}
 
-      {/* Notes */}
+      {/* ── Workout notes ───────────────────────────────────── */}
       {workout.workout_notes && (
-        <Text className="text-xs text-gray-400 italic mt-3 pt-3 border-t border-gray-100 leading-5">
-          {workout.workout_notes}
-        </Text>
+        <Text style={workoutStyles.workoutNotes}>{workout.workout_notes}</Text>
       )}
     </View>
   );
 }
+
+// ─── Styles ───────────────────────────────────────────────────────────────────
+
+const workoutStyles = StyleSheet.create({
+  card: {
+    backgroundColor: "#ffffff",
+    borderRadius: 18,
+    borderWidth: 1,
+    borderColor: "#f3f4f6",
+    paddingHorizontal: 14,
+    paddingTop: 14,
+    paddingBottom: 12,
+    shadowColor: "#000",
+    shadowOpacity: 0.04,
+    shadowRadius: 8,
+    shadowOffset: { width: 0, height: 2 },
+    elevation: 1,
+  },
+
+  // ── Header ──
+  headerRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+    marginBottom: 14,
+  },
+  headerLeft: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 10,
+    flex: 1,
+    marginRight: 10,
+  },
+  iconBadge: {
+    width: 40,
+    height: 40,
+    borderRadius: 12,
+    backgroundColor: "#f0fdf4",
+    alignItems: "center",
+    justifyContent: "center",
+    flexShrink: 0,
+  },
+  iconBadgeText: {
+    fontSize: 18,
+    color: "#16a34a",
+  },
+  workoutTitle: {
+    fontSize: 15,
+    fontWeight: "700",
+    color: "#111827",
+    letterSpacing: -0.1,
+    marginBottom: 1,
+  },
+  workoutMeta: {
+    fontSize: 12,
+    color: "#6b7280",
+  },
+
+  // ── Intensity chip ──
+  intensityChip: {
+    flexDirection: "row",
+    alignItems: "center",
+    borderRadius: 999,
+    paddingHorizontal: 10,
+    paddingVertical: 5,
+    gap: 5,
+    flexShrink: 0,
+  },
+  intensityDot: {
+    width: 6,
+    height: 6,
+    borderRadius: 3,
+  },
+  intensityText: {
+    fontSize: 12,
+    fontWeight: "600",
+    textTransform: "capitalize",
+  },
+
+  // ── Stats strip ──
+  statsStrip: {
+    flexDirection: "row",
+    backgroundColor: "#f8fafc",
+    borderRadius: 14,
+    paddingVertical: 12,
+    paddingHorizontal: 8,
+    marginBottom: 14,
+    justifyContent: "space-around",
+    alignItems: "center",
+    borderWidth: 1,
+    borderColor: "#f1f5f9",
+  },
+  statCell: {
+    alignItems: "center",
+    flex: 1,
+  },
+  statValue: {
+    fontSize: 15,
+    fontWeight: "700",
+    color: "#111827",
+    letterSpacing: -0.3,
+    marginBottom: 2,
+  },
+  statLabel: {
+    fontSize: 11,
+    color: "#9ca3af",
+    fontWeight: "400",
+  },
+  statDivider: {
+    width: 1,
+    height: 28,
+    backgroundColor: "#e5e7eb",
+  },
+
+  // ── Swipe hint ──
+  swipeHint: {
+    fontSize: 11,
+    color: "#9ca3af",
+    textAlign: "center",
+    marginBottom: 10,
+    letterSpacing: 0.1,
+  },
+
+  // ── Notes ──
+  workoutNotes: {
+    fontSize: 12,
+    color: "#9ca3af",
+    fontStyle: "italic",
+    marginTop: 10,
+    paddingTop: 10,
+    borderTopWidth: 1,
+    borderTopColor: "#f3f4f6",
+    lineHeight: 18,
+  },
+});
